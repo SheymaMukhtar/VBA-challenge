@@ -1,0 +1,108 @@
+Sub QuarterlyStockAnalysis()
+
+    Dim ws As Worksheet
+    Dim summarySheet As Worksheet
+    Dim ticker As String
+    Dim openPrice As Double
+    Dim closePrice As Double
+    Dim totalVolume As Double
+    Dim quarterlyChange As Double
+    Dim percentageChange As Double
+    Dim lastRow As Long
+    Dim i As Long
+    Dim summaryRow As Long
+    Dim greatestIncrease As Double
+    Dim greatestDecrease As Double
+    Dim greatestVolume As Double
+    Dim greatestIncreaseTicker As String
+    Dim greatestDecreaseTicker As String
+    Dim greatestVolumeTicker As String
+
+    ' Create or clear summary sheet
+    On Error Resume Next
+    Set summarySheet = Worksheets("Summary")
+    If summarySheet Is Nothing Then
+        Set summarySheet = Worksheets.Add
+        summarySheet.Name = "Summary"
+    Else
+        summarySheet.Cells.Clear
+    End If
+    On Error GoTo 0
+
+    summarySheet.Cells(1, 1).Value = "Ticker"
+    summarySheet.Cells(1, 2).Value = "Quarterly Change"
+    summarySheet.Cells(1, 3).Value = "Percentage Change"
+    summarySheet.Cells(1, 4).Value = "Total Volume"
+    
+    summaryRow = 2
+
+    ' Initialize greatest values
+    greatestIncrease = 0
+    greatestDecrease = 0
+    greatestVolume = 0
+
+    ' Loop through each worksheet
+    For Each ws In Worksheets
+        If ws.Name <> "Summary" Then
+            lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+            ' Initialize variables for each worksheet
+            i = 2
+            While i <= lastRow
+                ticker = ws.Cells(i, 1).Value
+                openPrice = ws.Cells(i, 3).Value
+                totalVolume = 0
+                
+                ' Loop through the data for the current ticker
+                Do While i <= lastRow And ws.Cells(i, 1).Value = ticker
+                    totalVolume = totalVolume + ws.Cells(i, 7).Value
+                    closePrice = ws.Cells(i, 6).Value
+                    i = i + 1
+                Loop
+
+                ' Calculate quarterly change and percentage change
+                quarterlyChange = closePrice - openPrice
+                If openPrice <> 0 Then
+                    percentageChange = (quarterlyChange / openPrice) * 100
+                Else
+                    percentageChange = 0
+                End If
+                
+                ' Output results to summary sheet
+                summarySheet.Cells(summaryRow, 1).Value = ticker
+                summarySheet.Cells(summaryRow, 2).Value = quarterlyChange
+                summarySheet.Cells(summaryRow, 3).Value = percentageChange
+                summarySheet.Cells(summaryRow, 4).Value = totalVolume
+                summaryRow = summaryRow + 1
+
+                ' Update greatest values
+                If percentageChange > greatestIncrease Then
+                    greatestIncrease = percentageChange
+                    greatestIncreaseTicker = ticker
+                End If
+                If percentageChange < greatestDecrease Then
+                    greatestDecrease = percentageChange
+                    greatestDecreaseTicker = ticker
+                End If
+                If totalVolume > greatestVolume Then
+                    greatestVolume = totalVolume
+                    greatestVolumeTicker = ticker
+                End If
+            Wend
+        End If
+    Next ws
+
+    ' Output greatest values to summary sheet
+    summarySheet.Cells(1, 6).Value = "Greatest % Increase"
+    summarySheet.Cells(2, 6).Value = greatestIncreaseTicker
+    summarySheet.Cells(2, 7).Value = greatestIncrease
+
+    summarySheet.Cells(4, 6).Value = "Greatest % Decrease"
+    summarySheet.Cells(5, 6).Value = greatestDecreaseTicker
+    summarySheet.Cells(5, 7).Value = greatestDecrease
+
+    summarySheet.Cells(7, 6).Value = "Greatest Total Volume"
+    summarySheet.Cells(8, 6).Value = greatestVolumeTicker
+    summarySheet.Cells(8, 7).Value = greatestVolume
+
+End Sub
